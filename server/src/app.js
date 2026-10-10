@@ -6,6 +6,8 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import applicationRoutes from './modules/applications/application.routes.js';
+import { applicationInterviewRouter, interviewRouter } from './modules/interviews/interview.routes.js';
+import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 
 const app = express();
 
@@ -19,6 +21,9 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 // Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/applications', applicationRoutes);
+app.use('/api/v1/applications', applicationInterviewRouter);
+app.use('/api/v1/interviews', interviewRouter);
+app.use('/api/v1/dashboard', dashboardRoutes);
 
 // 404 + error handler
 app.use(notFound);
