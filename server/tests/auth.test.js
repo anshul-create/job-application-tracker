@@ -9,7 +9,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await mongoose.connection.collection('users').deleteMany({ email: /testregister|testlogin|testme/ });
+  await mongoose.connection.collection('users').deleteMany({ email: /testregister|testlogin|testme|testlogout/ });
   await mongoose.disconnect();
 });
 
@@ -203,5 +203,66 @@ describe('GET /api/v1/auth/me', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe('INVALID_TOKEN');
+  });
+});
+
+// ─── Logout ───────────────────────────────────────────────────────────────────
+
+describe('POST /api/v1/auth/logout', () => {
+  let authCookie;
+
+  beforeAll(async () => {
+    await request(app)
+      .post('/api/v1/auth/register')
+      .send({ name: 'Logout User', email: 'testlogout@example.com', password: 'Password123!' });
+
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'testlogout@example.com', password: 'Password123!' });
+
+    authCookie = loginRes.headers['set-cookie'];
+  });
+
+  it('204 — clears the token cookie', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/logout')
+      .set('Cookie', authCookie);
+
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+
+    // The response should set a cookie with an expired/empty token
+    const cookies = res.headers['set-cookie'];
+    expect(cookies).toBeDefined();
+    expect(cookies.some((c) => c.includes('token=;'))).toBe(true);
+  });
+
+  it('204 — works even without a cookie (idempotent)', async () => {
+    const res = await request(app).post('/api/v1/auth/logout');
+
+    expect(res.status).toBe(204);
+  });
+
+  it('after logout, /me returns 401', async () => {
+    // Login fresh
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'testlogout@example.com', password: 'Password123!' });
+    const freshCookie = loginRes.headers['set-cookie'];
+
+    // Logout
+    const logoutRes = await request(app)
+      .post('/api/v1/auth/logout')
+      .set('Cookie', freshCookie);
+
+    expect(logoutRes.status).toBe(204);
+
+    // Extract the cleared cookie and try /me
+    const clearedCookie = logoutRes.headers['set-cookie'];
+    const meRes = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Cookie', clearedCookie);
+
+    expect(meRes.status).toBe(401);
   });
 });
