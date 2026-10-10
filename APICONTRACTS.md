@@ -297,7 +297,7 @@ Update selected fields of an application.
 
 Only supplied, permitted fields are updated. `userId`, `id`, `createdAt`, and `updatedAt` cannot be assigned by the client.
 
-### DELETE `/applications/:applicationId`
+### DELETE `/applications/:applicationId`  //half update
 
 Delete an application.
 
