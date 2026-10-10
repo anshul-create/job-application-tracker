@@ -63,3 +63,16 @@ export async function me(req, res, next) {
     return next(err);
   }
 }
+
+export async function logout(req, res, next) {
+  try {
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+    return res.status(204).send();
+  } catch (err) {
+    return next(err);
+  }
+}
